@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>陪伴App API测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff9a9e;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        button {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #ff9a9e;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left-color: #4caf50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .token-display {
+            background: #fff3e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 陪伴App API测试工具</h1>
+        
+        <div class="info">
+            <strong>使用说明：</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li>后端地址：http://localhost:5000</li>
+                <li>开发环境验证码：<strong>123456</strong></li>
+                <li>按顺序点击按钮测试各个功能</li>
+                <li>测试结果会显示在下方</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>1. 基础测试</h2>
+            <button onclick="testHealth()">测试健康检查</button>
+            <button onclick="testAPIInfo()">查看API信息</button>
+            <div id="health-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 用户认证</h2>
+            <input type="text" id="phone-input" placeholder="手机号" value="13800138000" style="padding: 8px; margin-right: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <button onclick="sendCode()">发送验证码</button>
+            <button onclick="login()">登录（验证码：123456）</button>
+            <button onclick="getMe()">获取用户信息</button>
+            <button onclick="createMultipleUsers()">创建多个测试用户</button>
+            <div id="auth-result" class="result" style="display:none;"></div>
+            <div id="token-display" class="token-display" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 打卡功能</h2>
+            <button onclick="checkin()">打卡</button>
+            <button onclick="getCheckinStatus()">查看打卡状态</button>
+            <button onclick="getCheckinCalendar()">查看打卡日历</button>
+            <div id="checkin-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 用户资料</h2>
+            <button onclick="getProfile()">获取资料</button>
+            <button onclick="updateProfile()">更新资料</button>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin-bottom: 5px;">上传头像：</label>
+                <input type="file" id="avatar-input" accept="image/*" style="margin-bottom: 10px;">
+                <button onclick="uploadAvatar()">上传头像</button>
+            </div>
+            <div id="profile-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 日志功能</h2>
+            <button onclick="getLogs()">获取日志列表</button>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin-bottom: 5px;">日志配字（最多500字）：</label>
+                <textarea id="log-content" placeholder="记录今天的美好时光..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; min-height: 80px;"></textarea>
+                <label style="display: block; margin-bottom: 5px;">选择图片（最多9张）：</label>
+                <input type="file" id="log-images-input" accept="image/*" multiple style="margin-bottom: 10px;">
+                <div id="image-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;"></div>
+                <button onclick="createLog()">创建日志</button>
+            </div>
+            <div id="logs-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>6. 完整流程测试</h2>
+            <button onclick="runFullTest()">运行完整测试</button>
+            <div id="full-test-result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let token = localStorage.getItem('api_token') || '';
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'result ' + (isError ? 'error' : 'success');
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function updateToken(newToken) {
+            if (newToken) {
+                token = newToken;
+                localStorage.setItem('api_token', token);
+                const tokenDisplay = document.getElementById('token-display');
+                tokenDisplay.style.display = 'block';
+                tokenDisplay.innerHTML = '<strong>当前Token:</strong> ' + token.substring(0, 50) + '...';
+            }
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                showResult('health-result', { status: '成功', data });
+            } catch (error) {
+                showResult('health-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function testAPIInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                showResult('health-result', { status: '成功', data });
+            } catch (error) {
+                showResult('health-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function sendCode() {
+            const phone = document.getElementById('phone-input').value || '13800138000';
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/send-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await response.json();
+                showResult('auth-result', { status: '成功', phone, data });
+            } catch (error) {
+                showResult('auth-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function login() {
+            const phone = document.getElementById('phone-input').value || '13800138000';
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/verify-phone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, code: '123456' })
+                });
+                const data = await response.json();
+                if (data.token) {
+                    updateToken(data.token);
+                    showResult('auth-result', { status: '登录成功', phone, user: data.user, token: data.token.substring(0, 30) + '...' });
+                } else {
+                    showResult('auth-result', { status: '登录失败', data }, true);
+                }
+            } catch (error) {
+                showResult('auth-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function getMe() {
+            if (!token) {
+                showResult('auth-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                showResult('auth-result', { status: '成功', data });
+            } catch (error) {
+                showResult('auth-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function checkin() {
+            if (!token) {
+                showResult('checkin-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/checkin`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                showResult('checkin-result', { status: '打卡成功', data });
+            } catch (error) {
+                const errorText = await error.response?.text();
+                showResult('checkin-result', { status: '失败', error: error.message, details: errorText }, true);
+            }
+        }
+
+        async function getCheckinStatus() {
+            if (!token) {
+                showResult('checkin-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/checkin/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                showResult('checkin-result', { status: '成功', data });
+            } catch (error) {
+                showResult('checkin-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function getCheckinCalendar() {
+            if (!token) {
+                showResult('checkin-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/checkin/calendar`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                showResult('checkin-result', { status: '成功', data });
+            } catch (error) {
+                showResult('checkin-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function getProfile() {
+            if (!token) {
+                showResult('profile-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/user/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                showResult('profile-result', { status: '成功', data });
+            } catch (error) {
+                showResult('profile-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function updateProfile() {
+            if (!token) {
+                showResult('profile-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/user/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nickname: '测试用户' + Math.floor(Math.random() * 1000),
+                        gender: 'male',
+                        signature: '这是通过API测试更新的个性签名'
+                    })
+                });
+                const data = await response.json();
+                showResult('profile-result', { status: '更新成功', data });
+            } catch (error) {
+                showResult('profile-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function uploadAvatar() {
+            if (!token) {
+                showResult('profile-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            
+            const fileInput = document.getElementById('avatar-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('profile-result', { status: '请选择图片文件', error: '没有选择文件' }, true);
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                showResult('profile-result', { status: '文件格式错误', error: '请选择图片文件' }, true);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                const response = await fetch(`${API_BASE}/api/user/avatar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.avatar) {
+                    showResult('profile-result', { 
+                        status: '上传成功', 
+                        avatar: data.avatar,
+                        avatarUrl: `${API_BASE}/uploads/${data.avatar}`,
+                        user: data.user 
+                    });
+                } else {
+                    showResult('profile-result', { status: '上传失败', data }, true);
+                }
+            } catch (error) {
+                showResult('profile-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function getLogs() {
+            if (!token) {
+                showResult('logs-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/logs`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                showResult('logs-result', { status: '成功', data });
+            } catch (error) {
+                showResult('logs-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        // 图片预览
+        document.getElementById('log-images-input').addEventListener('change', function(e) {
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';
+            const files = Array.from(e.target.files).slice(0, 9);
+            
+            files.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.width = '100%';
+                        img.style.height = '100px';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '5px';
+                        preview.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        async function createLog() {
+            if (!token) {
+                showResult('logs-result', { status: '请先登录', error: '没有token' }, true);
+                return;
+            }
+
+            const content = document.getElementById('log-content').value;
+            const fileInput = document.getElementById('log-images-input');
+            const files = Array.from(fileInput.files).slice(0, 9);
+
+            if (!content.trim() && files.length === 0) {
+                showResult('logs-result', { status: '请至少输入配字或上传图片', error: '内容不能为空' }, true);
+                return;
+            }
+
+            if (content.length > 500) {
+                showResult('logs-result', { status: '配字不能超过500字', error: `当前${content.length}字` }, true);
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('content', content);
+                
+                files.forEach((file, index) => {
+                    formData.append(`image${index}`, file);
+                });
+
+                const response = await fetch(`${API_BASE}/api/logs`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.id) {
+                    showResult('logs-result', { 
+                        status: '创建成功', 
+                        logId: data.id,
+                        content: data.content,
+                        images: data.images,
+                        createdAt: data.created_at
+                    });
+                    // 清空表单
+                    document.getElementById('log-content').value = '';
+                    document.getElementById('log-images-input').value = '';
+                    document.getElementById('image-preview').innerHTML = '';
+                } else {
+                    showResult('logs-result', { status: '创建失败', data }, true);
+                }
+            } catch (error) {
+                showResult('logs-result', { status: '失败', error: error.message }, true);
+            }
+        }
+
+        async function runFullTest() {
+            const result = document.getElementById('full-test-result');
+            result.style.display = 'block';
+            result.className = 'result';
+            result.textContent = '开始完整测试...\n\n';
+
+            try {
+                // 1. 健康检查
+                result.textContent += '1. 测试健康检查...\n';
+                const healthRes = await fetch(`${API_BASE}/api/health`);
+                const healthData = await healthRes.json();
+                result.textContent += `   ✓ ${JSON.stringify(healthData)}\n\n`;
+
+                // 2. 发送验证码
+                result.textContent += '2. 发送验证码...\n';
+                const codeRes = await fetch(`${API_BASE}/api/auth/send-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: '13800138000' })
+                });
+                const codeData = await codeRes.json();
+                result.textContent += `   ✓ ${JSON.stringify(codeData)}\n\n`;
+
+                // 3. 登录
+                result.textContent += '3. 登录...\n';
+                const loginRes = await fetch(`${API_BASE}/api/auth/verify-phone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: '13800138000', code: '123456' })
+                });
+                const loginData = await loginRes.json();
+                if (loginData.token) {
+                    updateToken(loginData.token);
+                    result.textContent += `   ✓ 登录成功，用户: ${loginData.user.nickname}\n\n`;
+                } else {
+                    throw new Error('登录失败');
+                }
+
+                // 4. 打卡
+                result.textContent += '4. 打卡...\n';
+                try {
+                    const checkinRes = await fetch(`${API_BASE}/api/checkin`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const checkinData = await checkinRes.json();
+                    result.textContent += `   ✓ 打卡成功: ${checkinData.checkin_date}\n\n`;
+                } catch (e) {
+                    result.textContent += `   ⚠ ${e.message}\n\n`;
+                }
+
+                // 5. 获取打卡状态
+                result.textContent += '5. 获取打卡状态...\n';
+                const statusRes = await fetch(`${API_BASE}/api/checkin/status`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const statusData = await statusRes.json();
+                result.textContent += `   ✓ ${JSON.stringify(statusData)}\n\n`;
+
+                // 6. 获取用户信息
+                result.textContent += '6. 获取用户信息...\n';
+                const meRes = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const meData = await meRes.json();
+                result.textContent += `   ✓ 用户: ${meData.nickname}\n\n`;
+
+                // 7. 获取日志列表
+                result.textContent += '7. 获取日志列表...\n';
+                const logsRes = await fetch(`${API_BASE}/api/logs`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const logsData = await logsRes.json();
+                result.textContent += `   ✓ 日志总数: ${logsData.total}\n\n`;
+
+                result.textContent += '🎉 所有测试完成！';
+                result.className = 'result success';
+            } catch (error) {
+                result.textContent += `\n❌ 测试失败: ${error.message}`;
+                result.className = 'result error';
+            }
+        }
+
+        // 页面加载时检查是否有保存的token
+        window.onload = function() {
+            if (token) {
+                updateToken(token);
+            }
+        };
+    </script>
+</body>
+</html>
+
