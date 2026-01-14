@@ -9,6 +9,8 @@ import json
 import uuid
 from PIL import Image
 import requests
+import pytz
+import pytz
 
 from config import Config
 from models import db, User, Checkin, Log
@@ -276,12 +278,19 @@ def uploaded_file(filename):
 
 # ==================== 打卡功能 ====================
 
+def get_today_date():
+    """获取今天的日期（使用中国时区UTC+8）"""
+    # 使用中国时区（Asia/Shanghai = UTC+8）
+    china_tz = pytz.timezone('Asia/Shanghai')
+    china_time = datetime.now(china_tz)
+    return china_time.date()
+
 @app.route('/api/checkin', methods=['POST'])
 @jwt_required()
 def checkin():
     """打卡（仅限今天）"""
     user_id = int(get_jwt_identity())
-    today = date.today()
+    today = get_today_date()
     
     # 检查今天是否已打卡
     existing = Checkin.query.filter_by(user_id=user_id, checkin_date=today).first()
@@ -300,7 +309,7 @@ def checkin():
 def checkin_status():
     """获取打卡状态"""
     user_id = int(get_jwt_identity())
-    today = date.today()
+    today = get_today_date()
     
     checkin = Checkin.query.filter_by(user_id=user_id, checkin_date=today).first()
     return jsonify({
@@ -313,9 +322,10 @@ def checkin_status():
 def get_checkin_calendar():
     """获取打卡日历数据"""
     user_id = int(get_jwt_identity())
+    today = get_today_date()
     
     # 获取最近3个月的打卡记录
-    start_date = date.today() - timedelta(days=90)
+    start_date = today - timedelta(days=90)
     checkins = Checkin.query.filter(
         Checkin.user_id == user_id,
         Checkin.checkin_date >= start_date
